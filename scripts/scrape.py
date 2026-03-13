@@ -1,42 +1,64 @@
-#!/usr/bin/env python3
+import urllib.request, urllib.parse, json
+
+query = """
+[out:json][timeout:60];
+area["ISO3166-1"="AU"]->.au;
+(
+  node["tourism"="camp_site"](area.au);
+  way["tourism"="camp_site"](area.au);
+  node["tourism"="caravan_site"](area.au);
+  way["tourism"="caravan_site"](area.au);
+);
+out center tags;
 """
-Scraper boilerplate for SITE_TITLE
-Usage: python3 scripts/scrape.py
 
-Output: src/data/records.json
-"""
-import json
-import os
-import time
-from pathlib import Path
-from urllib.request import urlopen, Request
+url = "https://overpass-api.de/api/interpreter"
+data = urllib.parse.urlencode({"data": query}).encode()
+req = urllib.request.Request(url, data)
+resp = urllib.request.urlopen(req, timeout=60)
+result = json.loads(resp.read())
 
-DATA_DIR = Path(__file__).parent.parent / "src" / "data"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+sites = []
+for el in result["elements"]:
+    tags = el.get("tags", {})
+    lat = el.get("lat") or el.get("center", {}).get("lat")
+    lon = el.get("lon") or el.get("center", {}).get("lon")
+    if not lat or not lon:
+        continue
+    site = {
+        "name": tags.get("name", ""),
+        "lat": lat,
+        "lon": lon,
+        "type": tags.get("tourism", "camp_site"),
+        "fee": tags.get("fee", ""),
+        "power": tags.get("power_supply", tags.get("electricity", "")),
+        "water": tags.get("drinking_water", ""),
+        "toilets": tags.get("toilets", ""),
+        "showers": tags.get("shower", ""),
+        "pets": tags.get("dog", tags.get("pets", "")),
+        "phone": tags.get("phone", tags.get("contact:phone", "")),
+        "website": tags.get("website", tags.get("contact:website", "")),
+        "addr": tags.get("addr:full", tags.get("addr:street", "")),
+        "state": tags.get("addr:state", ""),
+        "operator": tags.get("operator", ""),
+        "capacity": tags.get("capacity", ""),
+        "description": tags.get("description", ""),
+    }
+    sites.append(site)
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; StarMap Bot; +https://rollersoft.com.au)"
-}
+print(f"Total: {len(sites)}")
+named = [s for s in sites if s["name"]]
+print(f"Named: {len(named)}")
+with_fee = [s for s in sites if s["fee"]]
+print(f"With fee info: {len(with_fee)}")
+with_power = [s for s in sites if s["power"]]
+print(f"With power info: {len(with_power)}")
+with_water = [s for s in sites if s["water"]]
+print(f"With water info: {len(with_water)}")
+with_toilets = [s for s in sites if s["toilets"]]
+print(f"With toilets info: {len(with_toilets)}")
 
-def fetch(url: str) -> str:
-    req = Request(url, headers=HEADERS)
-    with urlopen(req, timeout=30) as resp:
-        return resp.read().decode()
+with open("/tmp/au-campsites.json", "w") as f:
+    json.dump(sites, f, indent=2)
 
-def scrape():
-    """TODO: Implement scraper"""
-    records = []
-    
-    # Example:
-    # html = fetch("https://example.com/data")
-    # ... parse and extract ...
-    # records.append({"name": ..., "value": ...})
-    
-    output = DATA_DIR / "records.json"
-    with open(output, "w") as f:
-        json.dump(records, f, indent=2, ensure_ascii=False)
-    
-    print(f"Scraped {len(records)} records → {output}")
-
-if __name__ == "__main__":
-    scrape()
+print("Saved to /tmp/au-campsites.json")

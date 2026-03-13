@@ -1,19 +1,16 @@
 # Style Guide
 
 ## 设计参考
-- [参考网站1 URL] — 借鉴要素（配色/布局/卡片/字体/间距）
-- [参考网站2 URL] — 借鉴要素
-
-## DaisyUI Theme
-`data-theme="DAISY_THEME"` — 在 layout.tsx 中设置
+- hipcamp.com — Outdoor/nature aesthetic, clean cards with location imagery, warm earth tones
+- recreation.gov — Government camping site, clear amenity icons, filter sidebar
+- thedyrt.com — Modern camping directory, map+list split view, badge-style amenity indicators
 
 ## 配色方案
-- Primary: #2563eb (修改 globals.css @theme)
-- Secondary: #7c3aed
-- Accent: #f59e0b
+DaisyUI theme: forest (dark greens, nature feel)
 
 ## 设计决策
-- [ ] 卡片风格：
-- [ ] 布局模式：
-- [ ] 字体层级：
-- [ ] 间距规范：
+- Map + list split view inspired by hipcamp/thedyrt
+- Amenity badges with icons (toilets, showers, power, water, pets)
+- State-based browsing with card grid
+- Warm, outdoorsy feel — forest greens and earth tones
+- Mobile-first: stack map above list on small screens
