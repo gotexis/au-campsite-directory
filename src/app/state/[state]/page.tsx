@@ -1,6 +1,6 @@
 import { getCampsitesByState, getStatesWithCounts } from "@/lib/data";
-import { STATE_NAMES } from "@/lib/types";
-import CampsiteCard from "@/components/CampsiteCard";
+import { STATE_NAMES, STATE_EMOJIS } from "@/lib/types";
+import AmenityFilter from "@/components/AmenityFilter";
 import { Metadata } from "next";
 import Link from "next/link";
 
@@ -18,9 +18,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { state } = await params;
   const upper = state.toUpperCase();
   const name = STATE_NAMES[upper] || upper;
+  const count = getCampsitesByState(upper).length;
   return {
-    title: `Campsites in ${name}`,
-    description: `Browse campsites and caravan parks in ${name}, Australia.`,
+    title: `${count} Campsites in ${name}`,
+    description: `Browse ${count} campsites and caravan parks in ${name}, Australia. Filter by amenities, find free camps, powered sites, and more.`,
   };
 }
 
@@ -28,7 +29,12 @@ export default async function StatePage({ params }: Props) {
   const { state } = await params;
   const upper = state.toUpperCase();
   const name = STATE_NAMES[upper] || upper;
+  const emoji = STATE_EMOJIS[upper] || "📍";
   const sites = getCampsitesByState(upper);
+
+  const free = sites.filter((s) => s.fee === "no").length;
+  const caravan = sites.filter((s) => s.type === "caravan_site").length;
+  const camp = sites.length - caravan;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -39,20 +45,18 @@ export default async function StatePage({ params }: Props) {
           <li>{name}</li>
         </ul>
       </div>
-      <h1 className="text-4xl font-bold mb-2">Campsites in {name}</h1>
-      <p className="text-base-content/60 mb-8">
-        {sites.length.toLocaleString()} campsites and caravan parks
-      </p>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {sites.slice(0, 60).map((site) => (
-          <CampsiteCard key={site.slug} site={site} />
-        ))}
+
+      {/* State hero */}
+      <div className="bg-gradient-to-r from-green-900/80 to-green-700/80 rounded-xl p-6 mb-8 text-white">
+        <h1 className="text-4xl font-bold mb-2">{emoji} Campsites in {name}</h1>
+        <div className="flex flex-wrap gap-6 text-sm opacity-90 mt-3">
+          <span>⛺ {camp.toLocaleString()} campsites</span>
+          <span>🚐 {caravan.toLocaleString()} caravan parks</span>
+          {free > 0 && <span>🆓 {free.toLocaleString()} free</span>}
+        </div>
       </div>
-      {sites.length > 60 && (
-        <p className="text-center mt-8 text-base-content/60">
-          Showing 60 of {sites.length.toLocaleString()} campsites. Full list coming soon.
-        </p>
-      )}
+
+      <AmenityFilter sites={sites} />
     </div>
   );
 }
